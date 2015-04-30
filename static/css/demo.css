@@ -1,0 +1,17 @@
+body{
+    margin: 0;
+    overflow: hidden;
+}
+.film{
+    position: absolute;
+}
+.film{
+    z-index: 999;
+}
+.content{
+    margin: 0 auto;
+    width: 320px;
+    height: 568px;
+    background: url("../img/page_1.jpg") no-repeat;
+    background-size: 320px 568px;
+}
