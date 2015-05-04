@@ -2,12 +2,6 @@ body{
     margin: 0;
     overflow: hidden;
 }
-.film{
-    position: absolute;
-}
-.film{
-    z-index: 999;
-}
 .content{
     margin: 0 auto;
     width: 320px;
