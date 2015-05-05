@@ -3,13 +3,10 @@
  */
 (function($){
     $.shine = function(obj){
-        var els = document.querySelectorAll(obj.el),      //考虑到可有会有多个 el， 所有不用 querySelector
+        var el = obj.el,      //考虑到可有会有多个 el， 所有不用 querySelector
             imgSrc = obj.imgSrc,
             clipRange = obj.clipRange || 40,      //涂抹范围
             lasting = obj.lasting || 120,     //涂抹长时间后 canvas 移除
-            i, len,
-            eCanvas = document.createElement('canvas'),
-            eCxt = eCanvas.getContext('2d'),
             isClip = false,  //判断是否涂抹
             flag = 0,   //计数， 120 后隐藏 canvas
             //手指坐标
@@ -34,11 +31,11 @@
             },
             //手指触摸
             eventDown = function(event){
-                var canvas = eCanvas,
-                    ctx = eCxt,
+                var canvas = event.target,
+                    ctx = canvas.getContext('2d'),
                     offsetX = parseInt(canvas.style.left, 10),
                     offsetY = parseInt(canvas.style.top, 10),
-                    hasTouch = "ontouchstart" in window ? true:false;
+                    hasTouch = 'ontouchstart' in window ? true : false;
 
                 startX = (hasTouch ? event.targetTouches[0].pageX : event.pageX) - offsetX;
                 startY = (hasTouch ? event.targetTouches[0].pageY : event.pageY) - offsetY;
@@ -54,13 +51,36 @@
             },
             //手指滑动
             eventMove = function(event){
+                var canvas = event.target,
+                    ctx = canvas.getContext('2d'),
+                    offsetX = parseInt(canvas.style.left, 10),
+                    offsetY = parseInt(canvas.style.top, 10),
+                    hasTouch = 'ontouchstart' in window ? true : false;
 
+                event.preventDefault();
+                if(isClip){
+                    moveX = (hasTouch ? event.targetTouches[0].pageX : event.pageX) - offsetX;
+                    moveY = (hasTouch ? event.targetTouches[0].pageY : event.pageY) - offsetY;
+                    flag++;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.lineWidth = clipRange;
+                    ctx.lineCap = 'round';
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(moveX, moveY);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    startX = moveX;
+                    startY = moveY;
+                }
             },
             //手指离开
             eventUp = function(event){
-                var canvas = eCanvas;
+                var canvas = event.target;
 
-                e.preventDefault();
+                event.preventDefault();
                 isClip = false;
                 if(flag > lasting){
                     document.body.removeChild(canvas);
@@ -70,13 +90,13 @@
                 var el = option,
                     w = el.offsetWidth,   //offsetWidth 为 width + padding + border
                     h = el.offsetHeight,
-                    canvas = eCanvas,
-                    ctx = eCxt,
+                    canvas = document.createElement('canvas'),
+                    ctx = canvas.getContext('2d'),
                     img = new Image(),
                     position = getPosition(el),
                     x, y,   //el 的位置
                     //判断浏览器在PC端或移动端
-                    hasTouch = "ontouchstart" in window ? true:false,
+                    hasTouch = 'ontouchstart' in window ? true : false,
                     tapStart = hasTouch ? "touchstart":"mousedown",
                     tapMove = hasTouch ? "touchmove":"mousemove",
                     tapEnd = hasTouch ? "touchend":"mouseup";
@@ -86,21 +106,26 @@
                 canvas.width = w;
                 canvas.height= h;
                 canvas.style.cssText = 'position: absolute; left: ' + x + 'px; top: ' + y + 'px; z-index: 999;';
+
                 img.src = imgSrc;
                 img.onload = function(){
-                    ctx.drawImage(img, 0, 0, 320, 568);
+                    ctx.drawImage(img, 0, 0, w, h);
                     document.body.appendChild(canvas);
                     el.style.visibility = 'visible';
                     ctx.globalCompositeOperation = "destination-out";     //抹去模糊图片
                     canvas.addEventListener(tapStart, eventDown);
                     canvas.addEventListener(tapMove, eventMove);
                     canvas.addEventListener(tapEnd, eventUp);
+
+                    //窗口大小变化时， 模糊图片位置改变
+                    window.onresize = function(){
+                        position = getPosition(el);
+                        canvas.style.left = position.x + 'px';
+                        canvas.style.top = position.y + 'px';
+                    };
                 };
             };
 
-        //循环 el, 给每个元素绑上事件
-        for(i = 0, len = els.length; i < len; i++){
-            init(els[i]);
-        }
+        init(el);
     };
 })(window);
